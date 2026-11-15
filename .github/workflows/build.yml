@@ -1,8 +1,11 @@
-name: Build OpenWrt 25.12.6 Xiaomi 4C (USB aktif + ZeroTier)
+name: Build OpenWrt 25.12.6 Xiaomi 4C (USB + DDNS + Adblock)
 
-# Setiap perubahan yang masuk main akan membangun firmware dan memperbarui
-# GitHub Release "latest". Build manual tetap tersedia untuk pengujian branch.
+# PR ke main dan build manual menghasilkan artifact pengujian.
+# Hanya push ke main yang boleh memperbarui Release latest.
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
@@ -13,6 +16,7 @@ permissions:
 
 env:
   OPENWRT_TAG: v25.12.6
+  MAX_SYSUPGRADE_BYTES: "15728640"
 
 jobs:
   build:
@@ -38,21 +42,39 @@ jobs:
       - name: Ambil kode sumber OpenWrt
         run: git clone --depth 1 --branch "$OPENWRT_TAG" https://github.com/openwrt/openwrt.git
 
-      - name: Update feeds
+      - name: Update feeds dan catat revisinya
         working-directory: openwrt
         run: |
           ./scripts/feeds update -a
           ./scripts/feeds install -a
+          mkdir -p ../hasil
+          {
+            echo "OpenWrt tag: $OPENWRT_TAG"
+            echo "OpenWrt commit: $(git rev-parse HEAD)"
+            echo "Feeds (exact commits used by this build):"
+            for feed in feeds/*; do
+              [ -d "$feed" ] || continue
+              printf '%s %s\n' "$(basename "$feed")" "$(git -C "$feed" rev-parse HEAD)"
+            done
+          } | tee ../hasil/feeds-lock.txt
 
-      - name: Aktifkan EHCI dan OHCI di DTS 4C
-        run: bash scripts/enable-usb-dts.sh openwrt
+      - name: Aktifkan dan verifikasi EHCI/OHCI di DTS
+        run: |
+          bash scripts/enable-usb-dts.sh openwrt
+          git -C openwrt diff --check
+          git -C openwrt diff -- target/linux/ramips/dts > hasil/usb-4c.patch
+          test -s hasil/usb-4c.patch
+          grep -q '&ehci' hasil/usb-4c.patch
+          grep -q '&ohci' hasil/usb-4c.patch
+          grep -q 'status = "okay"' hasil/usb-4c.patch
+          test "$(grep -c 'status = "okay"' hasil/usb-4c.patch)" -ge 2
 
       - name: Susun konfigurasi
         run: |
           cp config/xiaomi-mi-router-4c.config openwrt/.config
           make -C openwrt defconfig
 
-      - name: Periksa konfigurasi
+      - name: Periksa konfigurasi dan semua paket wajib
         run: bash scripts/validate-config.sh openwrt/.config
 
       - name: Unduh sumber paket
@@ -63,30 +85,67 @@ jobs:
         working-directory: openwrt
         run: make -j"$(nproc)" || make -j1 V=s
 
-      - name: Kumpulkan hasil
-        working-directory: openwrt
+      - name: Kumpulkan dan validasi firmware
+        env:
+          SOURCE_COMMIT: ${{ github.sha }}
+          SOURCE_REF: ${{ github.ref }}
         run: |
-          mkdir -p ../hasil
-          cp bin/targets/ramips/mt76x8/*xiaomi_mi-router-4c*sysupgrade.bin ../hasil/
-          cp bin/targets/ramips/mt76x8/sha256sums ../hasil/ || true
-          cp .config ../hasil/config.txt
-          git diff -- target/linux/ramips/dts > ../hasil/usb-4c.patch || true
-          ls -lh ../hasil
+          set -euo pipefail
+          mkdir -p hasil
+          mapfile -t images < <(find openwrt/bin/targets/ramips/mt76x8 -maxdepth 1 -type f -name '*xiaomi_mi-router-4c*sysupgrade.bin' -print)
+          if [ "${#images[@]}" -ne 1 ]; then
+            echo "ERROR: diharapkan tepat satu image sysupgrade Xiaomi Mi Router 4C; ditemukan ${#images[@]}" >&2
+            printf '%s\n' "${images[@]}" >&2
+            exit 1
+          fi
+          image="${images[0]}"
+          size="$(stat -c '%s' "$image")"
+          if [ "$size" -le 0 ] || [ "$size" -gt "$MAX_SYSUPGRADE_BYTES" ]; then
+            echo "ERROR: ukuran image tidak valid/lebih dari batas konservatif 15 MiB: $size bytes" >&2
+            exit 1
+          fi
+          cp "$image" hasil/
+          cp openwrt/.config hasil/config.txt
+          cp openwrt/bin/targets/ramips/mt76x8/sha256sums hasil/openwrt-sha256sums.txt
+          grep '^CONFIG_PACKAGE_.*=y$' openwrt/.config | sort > hasil/package-manifest.txt
+          {
+            echo "Device: Xiaomi Mi Router 4C"
+            echo "Target: ramips/mt76x8"
+            echo "OpenWrt: $OPENWRT_TAG"
+            echo "Repository commit: $SOURCE_COMMIT"
+            echo "Git ref: $SOURCE_REF"
+            echo "Build UTC: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "Image: $(basename "$image")"
+            echo "Image size bytes: $size"
+            echo "Config SHA256: $(sha256sum hasil/config.txt | awk '{print $1}')"
+            echo "USB patch SHA256: $(sha256sum hasil/usb-4c.patch | awk '{print $1}')"
+            echo "Feeds revisions: see feeds-lock.txt"
+            echo "Adblock package is included but service is not enabled/configured by this build."
+            echo "USB physical port remains untested until hardware installation."
+          } > hasil/BUILD-MANIFEST.txt
+          (cd hasil && sha256sum "$(basename "$image")" config.txt usb-4c.patch package-manifest.txt feeds-lock.txt BUILD-MANIFEST.txt > SHA256SUMS)
+          ls -lh hasil
+          test -s "hasil/$(basename "$image")"
+          test -s hasil/SHA256SUMS
+          test -s hasil/BUILD-MANIFEST.txt
 
       - name: Unggah hasil build sebagai artifact
         uses: actions/upload-artifact@v4
         with:
-          name: openwrt-4c-usb-${{ github.run_number }}
+          name: openwrt-4c-usb-ddns-adblock-${{ github.run_number }}
           path: hasil/
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Perbarui GitHub Release latest
-        if: github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           TAG="latest"
-          TITLE="OpenWrt 25.12.6 Xiaomi 4C USB + ZeroTier (Latest)"
-          NOTES="Build otomatis dari main pada commit ${GITHUB_SHA}. USB host EHCI/OHCI diaktifkan dan paket TUN/ZeroTier disertakan. Firmware telah dilaporkan berjalan pada perangkat; port USB fisik masih menunggu pemasangan dan pengujian hardware. Periksa checksum dan pastikan target perangkat benar sebelum flashing."
+          TITLE="OpenWrt 25.12.6 Xiaomi 4C USB + DDNS + Adblock"
+          NOTES="Build otomatis dari main pada commit ${GITHUB_SHA}. EHCI/OHCI patch diverifikasi; fitur USB storage, Dynamic DNS, dan Adblock disertakan. Adblock tidak diaktifkan otomatis. Port USB fisik tetap menunggu pemasangan dan pengujian hardware. Periksa BUILD-MANIFEST.txt dan SHA256SUMS sebelum penggunaan."
 
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "$TITLE" --notes "$NOTES" --latest
