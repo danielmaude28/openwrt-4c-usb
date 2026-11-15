@@ -47,6 +47,29 @@ Mi Router 4C memiliki flash 16 MB dan RAM 64 MB. Ruang flash harus diperiksa pad
 - exFAT tersedia melalui paket kernel dan utilitas. Uji baca/tulis dan unmount aman setelah port USB fisik dipasang.
 - Tidak ada Samba/file server atau paket berat lain yang ditambahkan.
 
+## Internet WAN melalui USB
+
+Firmware juga menyertakan driver/protokol untuk menjadikan modem USB atau adaptor USB Ethernet sebagai sumber internet WAN alternatif.
+
+### Adaptor USB Ethernet
+Paket mencakup CDC Ethernet, RNDIS, CDC-NCM, ASIX, dan Realtek RTL8152. Kompatibilitas tetap bergantung pada chipset dan mode yang diekspos adaptor. Setelah adaptor terpasang, periksa `dmesg` dan `ip link` untuk menemukan interface baru.
+
+### Modem seluler USB
+Dukungan paket mencakup:
+- QMI: `kmod-usb-net-qmi-wwan`, `uqmi`, `luci-proto-qmi`.
+- MBIM: `kmod-usb-net-cdc-mbim`, `umbim`, `luci-proto-mbim`.
+- NCM: `kmod-usb-net-cdc-ncm`, Huawei NCM, `comgt-ncm`, `luci-proto-ncm`.
+- Modem serial/PPP: USB serial Option/WWAN/ACM, `comgt`, dan `luci-proto-3g`.
+
+### Konfigurasi dan batasan
+- Interface WAN USB **tidak dibuat otomatis**. Pemilik harus memilih protokol yang cocok dengan model modem, mengatur APN, PIN SIM bila ada, autentikasi, dan firewall zone WAN di LuCI.
+- Untuk modem, mode USB harus cocok (QMI/MBIM/NCM/serial). Tidak semua modem mendukung semua protokol; beberapa modem perlu mode-switch atau firmware/modem configuration khusus.
+- Adaptor USB Ethernet biasanya muncul sebagai interface Ethernet dan dapat memakai DHCP client, tetapi nama interface dapat berubah.
+- Jangan menganggap semua modem USB didukung hanya karena driver umum tersedia. Kecocokan perlu dicocokkan dengan model/chipset dan diuji langsung.
+- USB 2.0 dan kemampuan CPU Mi Router 4C membatasi throughput; hasil aktual bergantung perangkat dan jaringan seluler.
+- Modem LTE/5G dapat menarik arus tinggi saat transmit. Port USB yang dimodifikasi wajib memiliki suplai 5 V yang memadai dan stabil; gunakan powered hub yang sesuai bila diperlukan. Jangan mengambil daya berlebih dari jalur board.
+- Jangan mengaktifkan dua default route WAN tanpa kebijakan metric/failover yang disengaja.
+
 ## Cara kerja build dan bukti hasil
 
 1. GitHub Actions mengambil OpenWrt pada tag `v25.12.6`.
