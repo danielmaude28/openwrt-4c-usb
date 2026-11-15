@@ -2,13 +2,15 @@
 
 Dokumen ini mencatat perubahan repository, alasan, dampak, dan status validasi. Perubahan pada branch PR belum berlaku pada firmware di router atau branch `main` sebelum PR digabung dan firmware baru dipasang secara terpisah.
 
-## 2026-11-16 — Penambahan USB exFAT, Dynamic DNS, Adblock, dan penguatan build (PR #1, branch `chore/restructure-build`)
+## 2026-11-16 — Penambahan USB WAN (Ethernet/modem), exFAT, Dynamic DNS, Adblock, dan penguatan build (PR #1, branch `chore/restructure-build`)
 
 Status: **diusulkan pada PR; build penuh sedang/akan diuji melalui GitHub Actions. Belum dianggap lulus sebelum run selesai sukses.**
 
 ### Perubahan konfigurasi firmware
 - Menambahkan `kmod-usb-storage-uas` untuk perangkat storage yang mendukung UAS.
 - Mempertahankan seluruh paket sebelumnya: LuCI, SQM/Cake, ttyd, nlbwmon, iftop, conntrack, htop, nano, curl, USB host/storage, ext4/VFAT, TUN, dan ZeroTier.
+- Menambahkan dukungan WAN USB Ethernet: CDC Ethernet, RNDIS, CDC-NCM, ASIX, dan Realtek RTL8152.
+- Menambahkan dukungan modem USB QMI, MBIM, NCM, dan modem serial/PPP melalui driver, utility, dan protokol LuCI.
 - Menambahkan `kmod-fs-exfat`, `exfat-fsck`, dan `exfat-mkfs` untuk filesystem exFAT.
 - Menambahkan `ddns-scripts`, `ddns-scripts-services`, dan `luci-app-ddns`.
 - Menambahkan `adblock` dan `luci-app-adblock`. Paket disertakan, tetapi service tidak diaktifkan/dikonfigurasi otomatis.
@@ -25,6 +27,8 @@ Status: **diusulkan pada PR; build penuh sedang/akan diuji melalui GitHub Action
 ### Dampak dan risiko
 - Image bertambah karena dukungan exFAT, DDNS, dan Adblock serta dependensinya. Ukuran final harus dilihat pada artifact hasil build, bukan diperkirakan dari nama paket.
 - Adblock dapat membebani RAM 64 MB ketika memproses blocklist. Paket disertakan tetapi harus tetap nonaktif sampai pengujian RAM; gunakan daftar kecil jika nantinya diuji.
+- WAN USB tidak dibuat otomatis; protokol, APN, PIN/autentikasi, firewall zone, dan metric route harus diatur sesuai modem/adaptor. Kompatibilitas bergantung model dan mode USB.
+- Modem LTE/5G dapat menarik arus tinggi; suplai 5 V port USB harus memadai dan stabil.
 - Dynamic DNS memerlukan konfigurasi provider dan kredensial oleh pemilik router. Jangan simpan kredensial dalam repository.
 - Dukungan software exFAT/USB tidak membuktikan port fisik berfungsi. Konektor USB masih belum dipasang dan belum diuji.
 - Tidak ada perubahan langsung pada router yang sedang digunakan, tidak ada flashing otomatis, dan tidak ada merge otomatis.
