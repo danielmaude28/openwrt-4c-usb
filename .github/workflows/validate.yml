@@ -21,12 +21,17 @@ jobs:
         run: |
           bash -n scripts/enable-usb-dts.sh
           bash -n scripts/validate-config.sh
+          bash -n tests/test-usb-dts.sh
 
-      - name: Validasi konfigurasi dasar
+      - name: Uji patch DTS USB pada fixture
+        run: bash tests/test-usb-dts.sh
+
+      - name: Validasi seluruh pilihan konfigurasi
         run: |
           grep -qx 'CONFIG_TARGET_ramips=y' config/xiaomi-mi-router-4c.config
           grep -qx 'CONFIG_TARGET_ramips_mt76x8=y' config/xiaomi-mi-router-4c.config
           grep -qx 'CONFIG_TARGET_ramips_mt76x8_DEVICE_xiaomi_mi-router-4c=y' config/xiaomi-mi-router-4c.config
-          grep -qx 'CONFIG_PACKAGE_kmod-usb-storage=y' config/xiaomi-mi-router-4c.config
-          grep -qx 'CONFIG_PACKAGE_zerotier=y' config/xiaomi-mi-router-4c.config
-          echo "Konfigurasi dasar ditemukan."
+          for package in kmod-usb-core kmod-usb2 kmod-usb-ohci kmod-usb-storage kmod-fs-exfat exfat-fsck exfat-mkfs ddns-scripts ddns-scripts-services luci-app-ddns adblock luci-app-adblock zerotier; do
+            grep -qx "CONFIG_PACKAGE_${package}=y" config/xiaomi-mi-router-4c.config
+          done
+          echo "Target dan paket pilihan ditemukan."
