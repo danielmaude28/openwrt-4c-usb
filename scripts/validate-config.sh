@@ -24,6 +24,11 @@ required_packages=(
   usbutils block-mount blkid
   kmod-usb-core kmod-usb2 kmod-usb-ohci kmod-usb-storage kmod-usb-storage-uas
   kmod-fs-ext4 kmod-fs-vfat kmod-fs-exfat exfat-fsck exfat-mkfs
+  kmod-usb-net kmod-usb-net-cdc-ether kmod-usb-net-rndis kmod-usb-net-cdc-ncm
+  kmod-usb-net-asix kmod-usb-net-rtl8152
+  kmod-usb-wdm kmod-usb-net-qmi-wwan kmod-usb-net-cdc-mbim kmod-usb-net-huawei-cdc-ncm
+  kmod-usb-serial kmod-usb-serial-option kmod-usb-serial-wwan kmod-usb-acm
+  uqmi umbim comgt comgt-ncm luci-proto-qmi luci-proto-mbim luci-proto-ncm luci-proto-3g
   kmod-tun zerotier
   ddns-scripts ddns-scripts-services luci-app-ddns
   adblock luci-app-adblock
