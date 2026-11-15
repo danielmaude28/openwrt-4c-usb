@@ -1,0 +1,32 @@
+name: Validate repository structure
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - chore/restructure-build
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validasi sintaks shell
+        run: |
+          bash -n scripts/enable-usb-dts.sh
+          bash -n scripts/validate-config.sh
+
+      - name: Validasi konfigurasi dasar
+        run: |
+          grep -qx 'CONFIG_TARGET_ramips=y' config/xiaomi-mi-router-4c.config
+          grep -qx 'CONFIG_TARGET_ramips_mt76x8=y' config/xiaomi-mi-router-4c.config
+          grep -qx 'CONFIG_TARGET_ramips_mt76x8_DEVICE_xiaomi_mi-router-4c=y' config/xiaomi-mi-router-4c.config
+          grep -qx 'CONFIG_PACKAGE_kmod-usb-storage=y' config/xiaomi-mi-router-4c.config
+          grep -qx 'CONFIG_PACKAGE_zerotier=y' config/xiaomi-mi-router-4c.config
+          echo "Konfigurasi dasar ditemukan."
