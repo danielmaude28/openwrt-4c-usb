@@ -1,7 +1,11 @@
 name: Build OpenWrt 25.12.6 Xiaomi 4C (USB aktif + ZeroTier)
 
-# Jalankan manual dari tab Actions > pilih workflow ini > Run workflow.
+# Setiap perubahan yang masuk main akan membangun firmware dan memperbarui
+# GitHub Release "latest". Build manual tetap tersedia untuk pengujian branch.
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -17,6 +21,8 @@ jobs:
     steps:
       - name: Checkout konfigurasi repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
 
       - name: Bebaskan ruang disk
         run: |
@@ -67,15 +73,24 @@ jobs:
           git diff -- target/linux/ramips/dts > ../hasil/usb-4c.patch || true
           ls -lh ../hasil
 
-      - name: Unggah hasil
+      - name: Unggah hasil build sebagai artifact
         uses: actions/upload-artifact@v4
         with:
-          name: openwrt-4c-usb
+          name: openwrt-4c-usb-${{ github.run_number }}
           path: hasil/
 
-      - name: Buat release
+      - name: Perbarui GitHub Release latest
+        if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="4c-zerotier-${{ github.run_number }}"
-          gh release create "$TAG" hasil/* --repo "$GITHUB_REPOSITORY" --title "OpenWrt 25.12.6 Xiaomi 4C ZeroTier #${{ github.run_number }}" --notes "OpenWrt 25.12.6, USB host EHCI/OHCI diaktifkan, kmod-tun dan zerotier. Port USB fisik perlu dipasang dan diuji terpisah."
+          TAG="latest"
+          TITLE="OpenWrt 25.12.6 Xiaomi 4C USB + ZeroTier (Latest)"
+          NOTES="Build otomatis dari main pada commit ${GITHUB_SHA}. USB host EHCI/OHCI diaktifkan dan paket TUN/ZeroTier disertakan. Firmware telah dilaporkan berjalan pada perangkat; port USB fisik masih menunggu pemasangan dan pengujian hardware. Periksa checksum dan pastikan target perangkat benar sebelum flashing."
+
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "$TITLE" --notes "$NOTES" --latest
+            gh release upload "$TAG" hasil/* --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG" hasil/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "$TITLE" --notes "$NOTES" --latest
+          fi
