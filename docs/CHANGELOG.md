@@ -7,6 +7,7 @@ Dokumen ini mencatat perubahan repository, alasan, dampak, dan status validasi. 
 Status: **diusulkan pada PR; build penuh sedang/akan diuji melalui GitHub Actions. Belum dianggap lulus sebelum run selesai sukses.**
 
 ### Perubahan konfigurasi firmware
+- Menambahkan `kmod-usb-storage-uas` untuk perangkat storage yang mendukung UAS.
 - Mempertahankan seluruh paket sebelumnya: LuCI, SQM/Cake, ttyd, nlbwmon, iftop, conntrack, htop, nano, curl, USB host/storage, ext4/VFAT, TUN, dan ZeroTier.
 - Menambahkan `kmod-fs-exfat`, `exfat-fsck`, dan `exfat-mkfs` untuk filesystem exFAT.
 - Menambahkan `ddns-scripts`, `ddns-scripts-services`, dan `luci-app-ddns`.
