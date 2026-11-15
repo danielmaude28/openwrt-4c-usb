@@ -22,7 +22,7 @@ required_packages=(
   luci luci-app-sqm sqm-scripts kmod-sched-cake
   luci-app-ttyd luci-app-nlbwmon iftop conntrack htop nano curl
   usbutils block-mount blkid
-  kmod-usb-core kmod-usb2 kmod-usb-ohci kmod-usb-storage
+  kmod-usb-core kmod-usb2 kmod-usb-ohci kmod-usb-storage kmod-usb-storage-uas
   kmod-fs-ext4 kmod-fs-vfat kmod-fs-exfat exfat-fsck exfat-mkfs
   kmod-tun zerotier
   ddns-scripts ddns-scripts-services luci-app-ddns
