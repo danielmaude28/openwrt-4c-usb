@@ -12,18 +12,25 @@ require_config() {
   fi
 }
 
+# Target harus tetap tepat untuk Xiaomi Mi Router 4C.
 require_config CONFIG_TARGET_ramips
 require_config CONFIG_TARGET_ramips_mt76x8
 require_config CONFIG_TARGET_ramips_mt76x8_DEVICE_xiaomi_mi-router-4c
 
-for package in kmod-usb-core kmod-usb2 kmod-usb-ohci kmod-usb-storage sqm-scripts luci kmod-tun zerotier; do
+# Semua fitur yang sudah ada dan fitur baru merupakan persyaratan build.
+required_packages=(
+  luci luci-app-sqm sqm-scripts kmod-sched-cake
+  luci-app-ttyd luci-app-nlbwmon iftop conntrack htop nano curl
+  usbutils block-mount blkid
+  kmod-usb-core kmod-usb2 kmod-usb-ohci kmod-usb-storage
+  kmod-fs-ext4 kmod-fs-vfat kmod-fs-exfat exfat-fsck exfat-mkfs
+  kmod-tun zerotier
+  ddns-scripts ddns-scripts-services luci-app-ddns
+  adblock luci-app-adblock
+)
+
+for package in "${required_packages[@]}"; do
   require_config "CONFIG_PACKAGE_$package"
 done
 
-for package in luci-app-sqm luci-app-ttyd luci-app-nlbwmon iftop conntrack htop nano curl usbutils block-mount kmod-fs-ext4 kmod-fs-vfat blkid kmod-sched-cake; do
-  if ! grep -qx "CONFIG_PACKAGE_$package=y" "$CONFIG_FILE"; then
-    echo "WARNING: paket opsional tidak terpilih: $package"
-  fi
-done
-
-echo "Konfigurasi target dan paket wajib valid."
+echo "Konfigurasi Xiaomi Mi Router 4C dan seluruh paket wajib valid."
