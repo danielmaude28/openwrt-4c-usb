@@ -31,7 +31,7 @@ Repository ini membangun OpenWrt 25.12.6 untuk Xiaomi Mi Router 4C (ramips/mt76x
 | Administrasi | `luci`, `luci-app-ttyd` | Web UI dan terminal web. |
 | QoS | `luci-app-sqm`, `sqm-scripts`, `kmod-sched-cake` | SQM/Cake dipertahankan. |
 | Monitoring | `luci-app-nlbwmon`, `iftop`, `conntrack`, `htop` | Pemantauan trafik dan koneksi dipertahankan. |
-| USB host | `kmod-usb-core`, `kmod-usb2`, `kmod-usb-ohci`, `kmod-usb-storage`, `usbutils` | Dukungan controller dan storage USB. |
+| USB host | `kmod-usb-core`, `kmod-usb2`, `kmod-usb-ohci`, `kmod-usb-storage`, `kmod-usb-storage-uas`, `usbutils` | Dukungan controller dan storage USB. |
 | Filesystem | `kmod-fs-ext4`, `kmod-fs-vfat`, `kmod-fs-exfat`, `exfat-fsck`, `exfat-mkfs` | ext4, FAT/VFAT, dan exFAT. |
 | VPN/overlay | `kmod-tun`, `zerotier` | Dipertahankan. |
 | Dynamic DNS | `ddns-scripts`, `ddns-scripts-services`, `luci-app-ddns` | UI disertakan; pengguna tetap harus memilih provider dan mengisi kredensial. |
