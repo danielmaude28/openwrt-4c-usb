@@ -31,7 +31,7 @@ jobs:
           grep -qx 'CONFIG_TARGET_ramips=y' config/xiaomi-mi-router-4c.config
           grep -qx 'CONFIG_TARGET_ramips_mt76x8=y' config/xiaomi-mi-router-4c.config
           grep -qx 'CONFIG_TARGET_ramips_mt76x8_DEVICE_xiaomi_mi-router-4c=y' config/xiaomi-mi-router-4c.config
-          for package in kmod-usb-core kmod-usb2 kmod-usb-ohci kmod-usb-storage kmod-fs-exfat exfat-fsck exfat-mkfs ddns-scripts ddns-scripts-services luci-app-ddns adblock luci-app-adblock zerotier; do
+          for package in kmod-usb-core kmod-usb2 kmod-usb-ohci kmod-usb-storage kmod-usb-storage-uas kmod-fs-exfat exfat-fsck exfat-mkfs ddns-scripts ddns-scripts-services luci-app-ddns adblock luci-app-adblock zerotier; do
             grep -qx "CONFIG_PACKAGE_${package}=y" config/xiaomi-mi-router-4c.config
           done
           echo "Target dan paket pilihan ditemukan."
