@@ -6,7 +6,7 @@ Firmware sudah terpasang dan berjalan baik menurut laporan pemilik perangkat. Po
 
 Dukungan software di firmware terdiri dari:
 - Node host controller EHCI/OHCI yang diaktifkan melalui Device Tree (DTS).
-- Paket kernel USB core, USB 2.0, OHCI, dan USB storage.
+- Paket kernel USB core, USB 2.0, OHCI, USB storage, USB Ethernet (CDC/RNDIS/NCM/ASIX/RTL8152), dan modem seluler (QMI/MBIM/NCM/serial).
 - Utilitas `usbutils`, pengelolaan block device, serta filesystem ext4/FAT/VFAT/exFAT, termasuk utilitas pemeriksaan dan pembuatan filesystem exFAT.
 
 Daftar paket bukan bukti bahwa rangkaian fisik, jalur data, dan suplai daya sudah benar.
@@ -33,7 +33,9 @@ Jika tidak yakin dengan skema/pinout atau pengukuran listrik, hentikan pemasanga
 6. Uji storage USB; periksa `block info` dan mount secara manual terlebih dahulu.
 7. Uji baca/tulis file pada ext4, FAT/VFAT, dan exFAT jika tersedia; unmount dengan aman, lalu uji reboot. Jangan format drive yang berisi data penting.
 8. Pantau suhu, kestabilan, dan tegangan 5 V selama pemakaian.
-9. Uji ZeroTier dan layanan router bersamaan untuk memastikan tidak ada regresi.
+9. Uji adaptor USB Ethernet: catat interface yang muncul, uji DHCP client, routing, DNS, dan firewall WAN.
+10. Uji modem USB sesuai protokol yang didukung (QMI/MBIM/NCM/serial): periksa enumerasi, APN, koneksi data, reconnect, dan stabilitas suplai daya. Pastikan hanya satu default route aktif kecuali failover memang dikonfigurasi.
+11. Uji ZeroTier dan layanan router bersamaan untuk memastikan tidak ada regresi.
 
 Jangan langsung mengaktifkan automount atau memasang storage berisi data penting sebelum uji manual berhasil.
 
@@ -55,3 +57,10 @@ Isi bagian ini setelah pengujian nyata dilakukan; jangan mengisi dengan asumsi.
 | Belum diuji | — | — | — | — | Port fisik belum dipasang |
 
 Jangan menyatakan USB siap produksi sampai semua pengujian yang relevan selesai.
+
+## Catatan penggunaan USB sebagai WAN
+
+- Driver/protokol yang disertakan tidak menjamin setiap modem atau adaptor kompatibel. Cocokkan chipset dan mode USB perangkat terlebih dahulu.
+- Interface WAN USB tidak dikonfigurasi otomatis. Buat interface di LuCI, pilih protokol yang sesuai, atur APN/PIN/autentikasi, dan tempatkan pada firewall zone WAN.
+- Jangan mengaktifkan dua default route tanpa pengaturan metric atau failover yang disengaja.
+- Catat model adaptor/modem, chipset, protokol, interface, log kernel, dan hasil tes throughput saat validasi.
