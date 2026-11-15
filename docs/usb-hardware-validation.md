@@ -7,7 +7,7 @@ Firmware sudah terpasang dan berjalan baik menurut laporan pemilik perangkat. Po
 Dukungan software di firmware terdiri dari:
 - Node host controller EHCI/OHCI yang diaktifkan melalui Device Tree (DTS).
 - Paket kernel USB core, USB 2.0, OHCI, dan USB storage.
-- Utilitas `usbutils`, pengelolaan block device, serta filesystem ext4/FAT.
+- Utilitas `usbutils`, pengelolaan block device, serta filesystem ext4/FAT/VFAT/exFAT, termasuk utilitas pemeriksaan dan pembuatan filesystem exFAT.
 
 Daftar paket bukan bukti bahwa rangkaian fisik, jalur data, dan suplai daya sudah benar.
 
@@ -31,7 +31,7 @@ Jika tidak yakin dengan skema/pinout atau pengukuran listrik, hentikan pemasanga
 4. Sambungkan perangkat USB berdaya rendah yang diketahui baik, lalu periksa `dmesg` dan `lsusb`.
 5. Pastikan host controller terdeteksi tanpa error; catat pesan kernel saat perangkat dicolok dan dilepas.
 6. Uji storage USB; periksa `block info` dan mount secara manual terlebih dahulu.
-7. Uji baca/tulis file, unmount dengan aman, lalu uji reboot.
+7. Uji baca/tulis file pada ext4, FAT/VFAT, dan exFAT jika tersedia; unmount dengan aman, lalu uji reboot. Jangan format drive yang berisi data penting.
 8. Pantau suhu, kestabilan, dan tegangan 5 V selama pemakaian.
 9. Uji ZeroTier dan layanan router bersamaan untuk memastikan tidak ada regresi.
 
@@ -41,7 +41,7 @@ Jangan langsung mengaktifkan automount atau memasang storage berisi data penting
 
 - Host controller EHCI/OHCI terdeteksi tanpa error berulang.
 - Perangkat USB ter-enumerasi secara konsisten saat colok/cabut.
-- Storage terdeteksi dan dapat dibaca/tulis tanpa error I/O.
+- Storage terdeteksi dan dapat dibaca/tulis tanpa error I/O pada filesystem yang diuji (ext4, FAT/VFAT, dan exFAT).
 - Router tidak reboot sendiri, hang, atau mengalami penurunan layanan.
 - Tegangan dan suhu berada dalam batas aman komponen dan tidak ada panas berlebih.
 - Hasil tetap konsisten setelah reboot dan pengujian layanan lain.
