@@ -14,6 +14,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: openwrt-4c-build-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 env:
   OPENWRT_TAG: v25.12.6
   MAX_SYSUPGRADE_BYTES: "15728640"
