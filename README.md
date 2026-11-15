@@ -1,6 +1,6 @@
-# OpenWrt Xiaomi Mi Router 4C — USB Storage, ZeroTier, DDNS & Adblock
+# OpenWrt Xiaomi Mi Router 4C — USB Storage/WAN, ZeroTier, DDNS & Adblock
 
-Repository ini membangun OpenWrt 25.12.6 untuk Xiaomi Mi Router 4C (ramips/mt76x8). Seluruh fitur firmware sebelumnya dipertahankan; penambahan saat ini adalah dukungan exFAT, Dynamic DNS, dan Adblock DNS.
+Repository ini membangun OpenWrt 25.12.6 untuk Xiaomi Mi Router 4C (ramips/mt76x8). Seluruh fitur firmware sebelumnya dipertahankan; penambahan saat ini adalah USB Ethernet/modem sebagai WAN, filesystem exFAT, Dynamic DNS, dan Adblock DNS.
 
 ## Status perangkat dan batas validasi
 
