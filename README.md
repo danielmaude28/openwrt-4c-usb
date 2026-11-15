@@ -1,69 +1,69 @@
-# OpenWrt Xiaomi Mi Router 4C — USB Host + ZeroTier
+# OpenWrt Xiaomi Mi Router 4C — USB Storage, ZeroTier, DDNS & Adblock
 
-Repository ini berisi konfigurasi, skrip, dokumentasi, dan workflow untuk membangun OpenWrt 25.12.6 bagi Xiaomi Mi Router 4C (ramips/mt76x8).
+Repository ini membangun OpenWrt 25.12.6 untuk Xiaomi Mi Router 4C (ramips/mt76x8). Seluruh fitur firmware sebelumnya dipertahankan; penambahan saat ini adalah dukungan exFAT, Dynamic DNS, dan Adblock DNS.
 
 ## Status perangkat dan batas validasi
 
-- Firmware hasil build sebelumnya sudah dipasang dan dilaporkan berjalan baik pada router.
-- Konfigurasi build menyertakan dukungan host USB (EHCI/OHCI), USB storage, filesystem ext4/FAT, dan utilitas USB.
-- **Port/konektor USB fisik belum dipasang.** Komponen masih menunggu diterima/dipasang. Karena itu, fungsi USB pada perangkat nyata belum tervalidasi.
-- ZeroTier dan paket pendukung jaringan disertakan dalam konfigurasi.
-
-Build yang sukses membuktikan proses kompilasi selesai; itu **bukan** bukti port USB fisik, suplai 5 V, enumerasi perangkat, atau stabilitas sudah lulus uji.
+- Firmware hasil build sebelumnya sudah dipasang dan dilaporkan berjalan baik.
+- Port/konektor USB fisik **belum dipasang**. Karena itu, controller, suplai 5 V, enumerasi perangkat, serta baca/tulis storage belum tervalidasi pada hardware nyata.
+- Build CI yang sukses hanya membuktikan image berhasil dibuat dan lolos pemeriksaan otomatis; bukan bukti port USB fisik sudah berfungsi.
+- Tidak ada workflow PR yang melakukan flashing. Build PR hanya menghasilkan artifact untuk ditinjau.
+- Release `latest` hanya boleh diperbarui oleh push ke `main` setelah seluruh langkah build dan validasi berhasil.
 
 ## Peta repository
 
-| Path | Tanggung jawab | Dampak |
+| Path | Tanggung jawab |
+|---|---|
+| `.github/workflows/build.yml` | Build OpenWrt, validasi patch dan image, membuat manifest/checksum, mengunggah artifact. Hanya push `main` yang menerbitkan Release `latest`. |
+| `.github/workflows/validate.yml` | Pemeriksaan sintaks shell, regresi patch DTS dengan fixture, dan pilihan paket. |
+| `config/xiaomi-mi-router-4c.config` | Target perangkat dan daftar seluruh paket wajib. |
+| `scripts/enable-usb-dts.sh` | Mengaktifkan EHCI/OHCI dan gagal bila status keduanya tidak dapat diverifikasi. |
+| `scripts/validate-config.sh` | Menghentikan build bila target atau salah satu paket wajib hilang setelah `defconfig`. |
+| `tests/test-usb-dts.sh` | Menguji patch DTS pada fixture tanpa hardware. |
+| `docs/usb-hardware-validation.md` | Checklist pemasangan dan pengujian port USB fisik. |
+| `docs/CHANGELOG.md` | Riwayat perubahan, dampak, dan status validasi. |
+| `assets/README.md` | Panduan aset dokumentasi. |
+
+## Fitur firmware
+
+| Kelompok | Paket utama | Keterangan |
 |---|---|---|
-| `.github/workflows/build.yml` | Mengambil sumber OpenWrt, memasang dependensi, menjalankan skrip, membangun image, mengunggah artifact, dan memperbarui Release `latest` dari `main`. | Mengatur proses build dan publikasi; tidak mengubah router yang sudah berjalan. |
-| `.github/workflows/validate.yml` | Memeriksa sintaks skrip dan keberadaan opsi konfigurasi penting pada PR/push yang ditentukan. | Pemeriksaan cepat repository, bukan build firmware penuh. |
-| `config/xiaomi-mi-router-4c.config` | Daftar target perangkat dan paket yang dipilih. | Menentukan komponen yang masuk image firmware. |
-| `scripts/enable-usb-dts.sh` | Mengubah node `ehci` dan `ohci` pada Device Tree menjadi `status = "okay"`, atau menambahkan blok bila belum ada. | Mengubah konfigurasi hardware USB saat proses build; tidak memasang port fisik. |
-| `scripts/validate-config.sh` | Memastikan target Xiaomi 4C dan paket wajib aktif setelah `make defconfig`; memberi peringatan untuk paket opsional yang tidak aktif. | Menghentikan build bila persyaratan wajib tidak terpenuhi. |
-| `docs/usb-hardware-validation.md` | Prosedur dan kriteria pengujian setelah port USB dipasang. | Panduan validasi fisik; belum berarti pengujian telah dilakukan. |
-| `docs/CHANGELOG.md` | Catatan perubahan repository per versi/PR. | Riwayat perubahan dan alasan perubahan. |
+| Administrasi | `luci`, `luci-app-ttyd` | Web UI dan terminal web. |
+| QoS | `luci-app-sqm`, `sqm-scripts`, `kmod-sched-cake` | SQM/Cake dipertahankan. |
+| Monitoring | `luci-app-nlbwmon`, `iftop`, `conntrack`, `htop` | Pemantauan trafik dan koneksi dipertahankan. |
+| USB host | `kmod-usb-core`, `kmod-usb2`, `kmod-usb-ohci`, `kmod-usb-storage`, `usbutils` | Dukungan controller dan storage USB. |
+| Filesystem | `kmod-fs-ext4`, `kmod-fs-vfat`, `kmod-fs-exfat`, `exfat-fsck`, `exfat-mkfs` | ext4, FAT/VFAT, dan exFAT. |
+| VPN/overlay | `kmod-tun`, `zerotier` | Dipertahankan. |
+| Dynamic DNS | `ddns-scripts`, `ddns-scripts-services`, `luci-app-ddns` | UI disertakan; pengguna tetap harus memilih provider dan mengisi kredensial. |
+| Adblock DNS | `adblock`, `luci-app-adblock` | Paket disertakan, tetapi service tidak diaktifkan/dikonfigurasi otomatis. |
 
-## Cara kerja build
+## Catatan kapasitas dan penggunaan
 
-1. GitHub Actions checkout commit yang memicu workflow.
-2. Mengambil OpenWrt pada tag sumber `v25.12.6`.
-3. Memperbarui dan memasang feeds paket.
-4. Menjalankan `scripts/enable-usb-dts.sh` untuk mengaktifkan node EHCI/OHCI di DTS Xiaomi 4C.
-5. Menyalin konfigurasi dari `config/xiaomi-mi-router-4c.config`, lalu menjalankan `make defconfig`.
-6. Memvalidasi target dan paket wajib dengan `scripts/validate-config.sh`.
-7. Mengunduh sumber paket dan mengompilasi firmware.
-8. Mengunggah folder hasil sebagai artifact bernomor berdasarkan run.
-9. **Hanya build dari branch `main`** yang membuat atau memperbarui GitHub Release bertag `latest`. Build manual dari branch pengembangan hanya menghasilkan artifact; tidak mengganti Release `latest`.
+Mi Router 4C memiliki flash 16 MB dan RAM 64 MB. Ruang flash harus diperiksa pada image akhir, sedangkan Adblock dapat menghabiskan RAM saat memproses daftar domain.
 
-Feed paket diperbarui saat build. Walaupun tag inti OpenWrt dikunci pada `v25.12.6`, versi paket feed dapat berubah antar-build. Untuk reproduksibilitas yang lebih kuat, feed nantinya perlu dikunci ke commit tertentu.
+- Adblock disertakan agar tersedia di LuCI, tetapi jangan mengaktifkannya sebelum pengujian. Mulai dengan daftar blokir kecil dan pantau RAM/log sistem.
+- Jika router mengalami OOM, DNS lambat, atau layanan lain terganggu, nonaktifkan Adblock; jangan memperbesar daftar.
+- Dynamic DNS tidak aktif secara fungsional sebelum provider, hostname, dan kredensial dikonfigurasi.
+- exFAT tersedia melalui paket kernel dan utilitas. Uji baca/tulis dan unmount aman setelah port USB fisik dipasang.
+- Tidak ada Samba/file server atau paket berat lain yang ditambahkan.
 
-## Isi konfigurasi firmware
+## Cara kerja build dan bukti hasil
 
-| Kelompok | Paket/opsi | Kegunaan |
-|---|---|---|
-| Target | `ramips/mt76x8`, Xiaomi Mi Router 4C | Memastikan image untuk perangkat yang benar. |
-| Web admin | `luci` | Antarmuka administrasi web. |
-| QoS | `luci-app-sqm`, `sqm-scripts`, `kmod-sched-cake` | Pengelolaan antrean dan latensi jaringan. |
-| Monitoring/utilitas | `ttyd`, `nlbwmon`, `iftop`, `conntrack`, `htop`, `nano`, `curl` | Terminal web, pemantauan trafik, koneksi, dan administrasi. |
-| USB | `kmod-usb-core`, `kmod-usb2`, `kmod-usb-ohci`, `kmod-usb-storage`, `usbutils`, `block-mount` | Infrastruktur host USB dan pengelolaan storage. |
-| Filesystem | `kmod-fs-ext4`, `kmod-fs-vfat`, `blkid` | Dukungan filesystem ext4 dan FAT serta identifikasi block device. |
-| VPN/overlay | `kmod-tun`, `zerotier` | Interface TUN dan ZeroTier. |
+1. GitHub Actions mengambil OpenWrt pada tag `v25.12.6`.
+2. Feeds diperbarui; commit SHA setiap feed dicatat dalam `feeds-lock.txt` agar isi sumber yang dipakai setiap build dapat diaudit. Feed belum dikunci ke SHA tetap lintas-build.
+3. Skrip mengaktifkan EHCI/OHCI. Build gagal jika node DTS tidak ditemukan, duplikat, atau status aktif tidak dapat diverifikasi.
+4. Konfigurasi disalin, `make defconfig` dijalankan, lalu semua paket wajib diperiksa.
+5. Firmware dikompilasi. Hasil harus berisi tepat satu image sysupgrade Xiaomi 4C dan ukurannya harus di bawah batas konservatif 15 MiB.
+6. Artifact menyertakan image, konfigurasi final, daftar paket, patch USB, revisi feed, manifest, dan checksum SHA256.
+7. Build PR dan build manual hanya menghasilkan artifact. Release `latest` tidak diperbarui oleh build PR.
 
-Daftar opsi lengkap berada di [config/xiaomi-mi-router-4c.config](config/xiaomi-mi-router-4c.config). Paket yang tercantum belum tentu otomatis dikonfigurasi atau dijalankan; layanan tetap perlu pengaturan sesuai kebutuhan.
+Buka **Actions → Build OpenWrt 25.12.6 Xiaomi 4C** untuk melihat proses. Jika build gagal, periksa step pertama yang gagal dan log lengkapnya. Build penuh dapat memerlukan waktu cukup lama.
 
-## Cara menjalankan dan membaca hasil
+## Keselamatan
 
-- Untuk pemeriksaan cepat, buka **Actions → Validate repository structure**.
-- Untuk build pengujian branch, jalankan **Actions → Build OpenWrt 25.12.6 Xiaomi 4C (USB aktif + ZeroTier) → Run workflow**.
-- Periksa log setiap step bila gagal. Artifact build tersedia pada halaman run.
-- Setelah perubahan masuk ke `main`, workflow build otomatis berjalan. Release `latest` baru diperbarui **setelah build berhasil**.
-- Sebelum memakai image, cocokkan nama target perangkat, baca catatan release, dan verifikasi checksum.
-
-## Keselamatan dan hal yang belum dijanjikan
-
-- Jangan flash ulang hanya karena struktur repository atau dokumentasi berubah. Firmware yang sudah berjalan tidak perlu disentuh.
-- Simpan backup konfigurasi dan siapkan metode recovery sebelum eksperimen firmware.
-- Pastikan image benar-benar untuk Xiaomi Mi Router 4C; salah image dapat membuat perangkat tidak bisa boot.
-- Jangan menghubungkan perangkat USB sebelum pinout, polaritas, jalur data, dan suplai daya diverifikasi. Jangan menganggap port aman memasok arus tanpa pengukuran.
-- Jangan menyatakan USB siap produksi sampai checklist di [panduan pengujian USB](usb-hardware-validation.md) lulus.
-- Validasi repository tidak menguji kualitas solder, rangkaian daya, suhu, atau fungsi USB pada hardware.
+- Jangan flash router yang sedang digunakan hanya karena repository atau dokumentasi berubah.
+- Jangan menganggap build sukses sebagai validasi USB fisik.
+- Pastikan pinout, D+/D-, 5 V, GND, proteksi, dan batas arus diperiksa sebelum memasang konektor.
+- Jangan mengaktifkan automount sebelum pengujian manual USB lulus.
+- Jangan memasukkan kredensial DDNS ke repository, konfigurasi publik, atau log CI.
+- Jangan merge PR atau memasang firmware tanpa persetujuan eksplisit pemilik perangkat.
