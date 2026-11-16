@@ -1,0 +1,51 @@
+name: Validate repository structure
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - chore/restructure-build
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validasi sintaks shell
+        run: |
+          bash -n scripts/enable-usb-dts.sh
+          bash -n scripts/validate-config.sh
+          bash -n tests/test-usb-dts.sh
+
+      - name: Uji patch DTS USB pada fixture
+        run: bash tests/test-usb-dts.sh
+
+      - name: Validasi seluruh pilihan konfigurasi
+        run: |
+          set -euo pipefail
+          grep -qx 'CONFIG_TARGET_ramips=y' config/xiaomi-mi-router-4c.config
+          grep -qx 'CONFIG_TARGET_ramips_mt76x8=y' config/xiaomi-mi-router-4c.config
+          grep -qx 'CONFIG_TARGET_ramips_mt76x8_DEVICE_xiaomi_mi-router-4c=y' config/xiaomi-mi-router-4c.config
+          packages=(
+            kmod-usb-core kmod-usb2 kmod-usb-ohci kmod-usb-storage kmod-usb-storage-uas
+            kmod-usb-net kmod-usb-net-cdc-ether kmod-usb-net-rndis kmod-usb-net-cdc-ncm
+            kmod-usb-net-asix kmod-usb-net-rtl8152
+            kmod-usb-wdm kmod-usb-net-qmi-wwan kmod-usb-net-cdc-mbim kmod-usb-net-huawei-cdc-ncm
+            kmod-usb-serial kmod-usb-serial-option kmod-usb-serial-wwan kmod-usb-acm
+            uqmi umbim comgt comgt-ncm luci-proto-qmi luci-proto-mbim luci-proto-ncm luci-proto-3g
+            kmod-fs-exfat exfat-fsck exfat-mkfs ddns-scripts ddns-scripts-services luci-app-ddns
+            adblock luci-app-adblock zerotier
+          )
+          for package in "${packages[@]}"; do
+            grep -qx "CONFIG_PACKAGE_${package}=y" config/xiaomi-mi-router-4c.config || {
+              echo "Paket tidak ditemukan dalam konfigurasi: ${package}" >&2
+              exit 1
+            }
+          done
+          echo "Target dan seluruh paket pilihan ditemukan."
