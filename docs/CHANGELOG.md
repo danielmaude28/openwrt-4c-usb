@@ -4,7 +4,7 @@ Dokumen ini mencatat perubahan repository, alasan, dampak, dan status validasi. 
 
 ## 2026-11-16 — Penambahan USB WAN (Ethernet/modem), exFAT, Dynamic DNS, Adblock, dan penguatan build (PR #1, branch `chore/restructure-build`)
 
-Status: **diusulkan pada PR; build penuh sedang/akan diuji melalui GitHub Actions. Belum dianggap lulus sebelum run selesai sukses.**
+Status: **diusulkan pada PR; build penuh Run #21 sukses dan workflow validasi Run #59 sukses pada commit `124dfb0`. Ini membuktikan kompilasi dan pemeriksaan otomatis, bukan pengujian hardware USB.**
 
 ### Perubahan konfigurasi firmware
 - Menambahkan `kmod-usb-storage-uas` untuk perangkat storage yang mendukung UAS.
@@ -55,13 +55,18 @@ Memisahkan konfigurasi, logika skrip, dokumentasi, dan otomasi agar perubahan mu
 ### Dampak dan risiko
 - Perubahan file konfigurasi dapat ditinjau terpisah dari alur build.
 - Kegagalan target/paket wajib akan menghentikan build lebih awal.
-- Build PR menghasilkan artifact, bukan Release `latest`.
+- Build PR menghasilkan artifact, bukan release. Push ke `main` akan membuat release baru dengan tag unik dan menandainya sebagai GitHub Latest Release.
+- Tidak lagi mengedit tag `latest` atau mengunggah dengan `--clobber`; jika tag unik sudah ada, workflow berhenti agar tidak menimpa aset.
 - Aktivasi DTS hanya mengatur dukungan controller; tidak memasang konektor USB fisik.
 
 ### Validasi
 - Workflow validasi ringan sebelumnya lulus pada commit awal restrukturisasi.
 - Build penuh untuk restrukturisasi awal belum dianggap lulus sebelum ada run sukses yang relevan.
 - USB fisik tetap menunggu pemasangan port dan pengujian nyata.
+
+## Kebijakan preservasi aset release
+
+Setiap pembaruan firmware wajib mempertahankan semua release, tag, dan aset historis. Workflow hanya boleh membuat release baru dengan tag unik; tidak boleh menghapus release/tag, mengedit release lama, atau memakai `--clobber`. GitHub Latest Release diarahkan ke release baru melalui penandaan latest, sementara seluruh versi sebelumnya tetap tersedia. Build PR hanya menghasilkan artifact dan tidak menerbitkan release.
 
 ## Kebijakan pencatatan berikutnya
 
