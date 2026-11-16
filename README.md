@@ -8,13 +8,13 @@ Repository ini membangun OpenWrt 25.12.6 untuk Xiaomi Mi Router 4C (ramips/mt76x
 - Port/konektor USB fisik **belum dipasang**. Karena itu, controller, suplai 5 V, enumerasi perangkat, serta baca/tulis storage belum tervalidasi pada hardware nyata.
 - Build CI yang sukses hanya membuktikan image berhasil dibuat dan lolos pemeriksaan otomatis; bukan bukti port USB fisik sudah berfungsi.
 - Tidak ada workflow PR yang melakukan flashing. Build PR hanya menghasilkan artifact untuk ditinjau.
-- Release `latest` hanya boleh diperbarui oleh push ke `main` setelah seluruh langkah build dan validasi berhasil.
+- Release baru hanya boleh dibuat oleh push ke `main` setelah seluruh langkah build dan validasi berhasil. Setiap build memakai tag unik; release dan aset versi lama tidak boleh diedit, dihapus, atau ditimpa.
 
 ## Peta repository
 
 | Path | Tanggung jawab |
 |---|---|
-| `.github/workflows/build.yml` | Build OpenWrt, validasi patch dan image, membuat manifest/checksum, mengunggah artifact. Hanya push `main` yang menerbitkan Release `latest`. |
+| `.github/workflows/build.yml` | Build OpenWrt, validasi patch dan image, membuat manifest/checksum, mengunggah artifact. Hanya push `main` yang membuat release bertag unik dan menandainya sebagai GitHub Latest Release; aset rilis historis tidak ditimpa. |
 | `.github/workflows/validate.yml` | Pemeriksaan sintaks shell, regresi patch DTS dengan fixture, dan pilihan paket. |
 | `config/xiaomi-mi-router-4c.config` | Target perangkat dan daftar seluruh paket wajib. |
 | `scripts/enable-usb-dts.sh` | Mengaktifkan EHCI/OHCI dan gagal bila status keduanya tidak dapat diverifikasi. |
@@ -78,7 +78,7 @@ Dukungan paket mencakup:
 4. Konfigurasi disalin, `make defconfig` dijalankan, lalu semua paket wajib diperiksa.
 5. Firmware dikompilasi. Hasil harus berisi tepat satu image sysupgrade Xiaomi 4C dan ukurannya harus di bawah batas konservatif 15 MiB.
 6. Artifact menyertakan image, konfigurasi final, daftar paket, patch USB, revisi feed, manifest, dan checksum SHA256.
-7. Build PR dan build manual hanya menghasilkan artifact. Release `latest` tidak diperbarui oleh build PR.
+7. Build PR dan build manual hanya menghasilkan artifact. Build PR tidak menerbitkan release. Push `main` membuat release bertag unik dan menandainya sebagai Latest Release GitHub tanpa mengedit tag/aset historis.
 
 Buka **Actions → Build OpenWrt 25.12.6 Xiaomi 4C** untuk melihat proses. Jika build gagal, periksa step pertama yang gagal dan log lengkapnya. Build penuh dapat memerlukan waktu cukup lama.
 
